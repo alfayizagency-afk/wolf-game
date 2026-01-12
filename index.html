@@ -3,46 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ليلة الذئاب - V2</title>
+    <title>ليلة الذئاب</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ليلة الذئاب">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #8b5cf6; --text: #f8fafc; }
-        body { background: var(--bg); color: var(--text); font-family: 'Tajawal', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        button { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1.1rem; }
+        body { background: var(--bg); color: var(--text); font-family: 'Tajawal', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .card { background: var(--card); padding: 30px; border-radius: 25px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); }
+        button { width: 100%; padding: 18px; border: none; border-radius: 15px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #334155; margin-bottom: 15px; text-align: center; font-size: 1.2rem; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
         .hidden { display: none !important; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 10px; text-align: center; font-size: 1.1rem; background: #0f172a; color: white; box-sizing: border-box; }
-        #net-status { font-size: 0.7rem; color: #10b981; margin-bottom: 5px; }
+        .player-list { margin: 20px 0; text-align: right; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div id="s1" class="card">
-    <div id="net-status">● متصل بالسيرفر</div>
     <h1>🐺 ليلة الذئاب</h1>
-    <input type="text" id="nn" placeholder="اكتب اسمك">
-    <button onclick="go2()">دخول</button>
+    <input type="text" id="nn" placeholder="اسمك الكريم">
+    <button onclick="go2()">دخول اللعبة</button>
 </div>
 
 <div id="s2" class="card hidden">
     <button onclick="cr()">➕ إنشاء غرفة جديدة</button>
-    <p style="margin:10px 0; opacity:0.5;">أو</p>
+    <p>أو</p>
     <input type="number" id="ri" placeholder="كود الغرفة">
     <button style="background:#475569" onclick="jn()">🔗 انضمام لصديق</button>
 </div>
 
 <div id="s3" class="card hidden">
-    <h3>كود الغرفة: <span id="cc" style="color:#10b981; font-size:2rem;"></span></h3>
-    <div id="pl" style="margin:20px 0; text-align:right; border-top:1px solid #334155; padding-top:10px;"></div>
-    <button id="bb" class="hidden" style="background:#10b981" onclick="sg()">🚀 ابدأ اللعبة للكل</button>
-    <p id="wm">بانتظار المنشئ يبدأ...</p>
+    <h3>كود الغرفة: <span id="cc" style="color:#10b981; font-size: 2rem;"></span></h3>
+    <div class="player-list" id="pl"></div>
+    <button id="bb" class="hidden" style="background:#10b981" onclick="sg()">🚀 ابدأ اللعبة الآن</button>
+    <p id="wm">بانتظار المنشئ...</p>
 </div>
 
 <div id="s4" class="card hidden">
     <h2>دورك هو:</h2>
-    <h1 id="rr" style="color:#8b5cf6; font-size:3rem;"></h1>
+    <div style="font-size: 2.5rem; padding: 20px; color: #8b5cf6;" id="rr"></div>
     <button onclick="location.reload()" style="background:#ef4444">خروج</button>
 </div>
 
@@ -59,24 +63,17 @@
     function st() {
         show('s3'); document.getElementById('cc').innerText = rd;
         const ref = db.ref('rooms/' + rd);
+        ref.child('p').push({ n: un, h: h }).onDisconnect().remove();
+        if(h) { document.getElementById('bb').classList.remove('hidden'); document.getElementById('wm').classList.add('hidden'); }
         
-        // تسجيل اللاعب
-        const myP = ref.child('p').push();
-        myP.set({ n: un, h: h });
-        myP.onDisconnect().remove();
-
-        if(h) document.getElementById('bb').classList.remove('hidden');
-
-        // تحديث القائمة فوراً عند دخول أي شخص
         ref.child('p').on('value', s => {
-            let t = "<b>اللاعبين المتصلين:</b>";
+            let t = "<b>المتواجدون:</b>";
             s.forEach(p => { t += `<div>👤 ${p.val().n}</div>`; });
             document.getElementById('pl').innerHTML = t;
         });
 
-        // أهم جزء: الاستماع لإشارة البدء
-        ref.child('status').on('value', s => {
-            if(s.val() === "GO") {
+        ref.child('s').on('value', s => {
+            if(s.val() === "G") {
                 show('s4');
                 const rs = ["ذئب 🐺", "طبيب 🏥", "محقق 🔍", "مواطن 👤", "مواطن 👤"];
                 document.getElementById('rr').innerText = rs[Math.floor(Math.random()*rs.length)];
@@ -84,15 +81,8 @@
         });
     }
 
-    function sg() { 
-        // مسح الحالة القديمة ثم البدء
-        db.ref('rooms/' + rd + '/status').set("GO"); 
-    }
-
-    function show(i) {
-        ['s1','s2','s3','s4'].forEach(x => document.getElementById(x).classList.add('hidden'));
-        document.getElementById(i).classList.remove('hidden');
-    }
+    function sg() { db.ref('rooms/' + rd + '/s').set("G"); }
+    function show(i) { document.querySelectorAll('.card').forEach(x => x.classList.add('hidden')); document.getElementById(i).classList.remove('hidden'); }
 </script>
 </body>
 </html>
