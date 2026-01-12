@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ليلة الذئاب أونلاين</title>
+    <title>ليلة الذئاب - V2</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap" rel="stylesheet">
@@ -11,41 +11,39 @@
         :root { --bg: #0f172a; --card: #1e293b; --primary: #8b5cf6; --text: #f8fafc; }
         body { background: var(--bg); color: var(--text); font-family: 'Tajawal', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .card { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        button { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1.1rem; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
+        button { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1.1rem; }
         .hidden { display: none !important; }
         input { width: 100%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 10px; text-align: center; font-size: 1.1rem; background: #0f172a; color: white; box-sizing: border-box; }
-        .room-tag { font-size: 2.2rem; color: #10b981; font-weight: 900; display: block; margin: 10px 0; border: 2px dashed #10b981; padding: 10px; border-radius: 10px; }
+        #net-status { font-size: 0.7rem; color: #10b981; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div id="s1" class="card">
+    <div id="net-status">● متصل بالسيرفر</div>
     <h1>🐺 ليلة الذئاب</h1>
     <input type="text" id="nn" placeholder="اكتب اسمك">
     <button onclick="go2()">دخول</button>
 </div>
 
 <div id="s2" class="card hidden">
-    <button onclick="cr()">➕ إنشاء غرفة</button>
-    <div style="margin:10px 0; opacity:0.5;">أو</div>
+    <button onclick="cr()">➕ إنشاء غرفة جديدة</button>
+    <p style="margin:10px 0; opacity:0.5;">أو</p>
     <input type="number" id="ri" placeholder="كود الغرفة">
-    <button style="background:#475569" onclick="jn()">🔗 انضمام</button>
+    <button style="background:#475569" onclick="jn()">🔗 انضمام لصديق</button>
 </div>
 
 <div id="s3" class="card hidden">
-    <h3>كود الغرفة: <span id="cc" class="room-tag"></span></h3>
-    <div id="pl" style="margin:20px 0; text-align:right; max-height: 150px; overflow-y: auto;"></div>
-    <button id="bb" class="hidden" style="background:#10b981" onclick="sg()">🚀 ابدأ للكل</button>
-    <p id="wm">بانتظار المنشئ...</p>
+    <h3>كود الغرفة: <span id="cc" style="color:#10b981; font-size:2rem;"></span></h3>
+    <div id="pl" style="margin:20px 0; text-align:right; border-top:1px solid #334155; padding-top:10px;"></div>
+    <button id="bb" class="hidden" style="background:#10b981" onclick="sg()">🚀 ابدأ اللعبة للكل</button>
+    <p id="wm">بانتظار المنشئ يبدأ...</p>
 </div>
 
 <div id="s4" class="card hidden">
-    <h2>دورك:</h2>
-    <div style="padding:30px; background:rgba(139,92,246,0.1); border:2px solid var(--primary); border-radius:20px;">
-        <p id="rr" style="font-size: 2.2rem; font-weight: 900; margin:0;"></p>
-    </div>
-    <button onclick="location.reload()" style="background:#ef4444; margin-top:20px;">خروج</button>
+    <h2>دورك هو:</h2>
+    <h1 id="rr" style="color:#8b5cf6; font-size:3rem;"></h1>
+    <button onclick="location.reload()" style="background:#ef4444">خروج</button>
 </div>
 
 <script>
@@ -61,22 +59,24 @@
     function st() {
         show('s3'); document.getElementById('cc').innerText = rd;
         const ref = db.ref('rooms/' + rd);
-        ref.child('p').push({ n: un, h: h }).onDisconnect().remove();
         
-        if(h) {
-            document.getElementById('bb').classList.remove('hidden');
-            document.getElementById('wm').classList.add('hidden');
-        }
+        // تسجيل اللاعب
+        const myP = ref.child('p').push();
+        myP.set({ n: un, h: h });
+        myP.onDisconnect().remove();
 
+        if(h) document.getElementById('bb').classList.remove('hidden');
+
+        // تحديث القائمة فوراً عند دخول أي شخص
         ref.child('p').on('value', s => {
-            let t = "<strong>اللاعبين:</strong>"; 
-            s.forEach(p => { t += `<div>👤 ${p.val().n} ${p.val().h?'(المنشئ)':''}</div>`; });
+            let t = "<b>اللاعبين المتصلين:</b>";
+            s.forEach(p => { t += `<div>👤 ${p.val().n}</div>`; });
             document.getElementById('pl').innerHTML = t;
         });
 
-        // الاستماع لإشارة البدء من السيرفر
-        ref.child('s').on('value', s => {
-            if(s.val() === "G") {
+        // أهم جزء: الاستماع لإشارة البدء
+        ref.child('status').on('value', s => {
+            if(s.val() === "GO") {
                 show('s4');
                 const rs = ["ذئب 🐺", "طبيب 🏥", "محقق 🔍", "مواطن 👤", "مواطن 👤"];
                 document.getElementById('rr').innerText = rs[Math.floor(Math.random()*rs.length)];
@@ -84,8 +84,15 @@
         });
     }
 
-    function sg() { db.ref('rooms/' + rd + '/s').set("G"); }
-    function show(i) { ['s1','s2','s3','s4'].forEach(x => document.getElementById(x).classList.add('hidden')); document.getElementById(i).classList.remove('hidden'); }
+    function sg() { 
+        // مسح الحالة القديمة ثم البدء
+        db.ref('rooms/' + rd + '/status').set("GO"); 
+    }
+
+    function show(i) {
+        ['s1','s2','s3','s4'].forEach(x => document.getElementById(x).classList.add('hidden'));
+        document.getElementById(i).classList.remove('hidden');
+    }
 </script>
 </body>
 </html>
