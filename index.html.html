@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ليلة الذئاب VIP - نسخة فاتح</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #8b5cf6; --danger: #ef4444; --accent: #f59e0b; --text: #f8fafc; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: 'Tajawal', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .container { width: 100%; max-width: 400px; padding: 20px; }
+        .card { background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; width: 100%; text-align: center; max-height: 85vh; overflow-y: auto; }
+        .player-name-yellow { font-size: 2rem; color: var(--accent); font-weight: 900; margin: 10px 0; }
+        .btn-main { background: var(--primary); color: white; width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-opt { background: #334155; color: white; width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-family: inherit; }
+        .vote-circle { width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--primary); background: white; color: var(--bg); font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 5px auto; padding: 5px; text-align: center; font-size: 0.85rem; }
+        .hidden { display: none !important; }
+        #custom-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 20px; width: 100%; text-align: center; border: 2px solid var(--primary); }
+        .close-btn { position: absolute; top: 15px; left: 15px; background: #ef4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; cursor: pointer; z-index: 10000; font-size: 20px; line-height: 40px; }
+        .wolf-mate-text { color: #ef4444; font-weight: bold; margin: 10px 0; font-size: 1.1rem; border-bottom: 1px solid #475569; padding-bottom: 8px; }
+        .wolf-target { color: #ef4444 !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<button class="close-btn" onclick="hardReset()">✕</button>
+
+<div class="container">
+    <div id="custom-modal" class="hidden">
+        <div class="modal-content">
+            <p id="modal-msg" style="font-size: 1.1rem; margin-bottom: 20px;"></p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-main" id="btn-ok" style="margin:0; flex:1;">تأكيد</button>
+                <button class="btn-opt" id="btn-no" style="flex:1;">تراجع</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="setup-view" class="card">
+        <h1>🔪 ليلة الذئاب</h1>
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; margin-bottom: 15px;">
+            <span>وضع العم 👑</span>
+            <input type="checkbox" id="comedy-mode" checked style="width:22px; height:22px;">
+        </div>
+        <textarea id="names-input" style="width:100%; height:120px; background:#0f172a; color:white; border-radius:12px; padding:10px; border:1px solid #334155;">فاتح
+محمد
+طاهر
+عزوز
+مودي
+جوكس</textarea>
+        <button class="btn-main" onclick="initGame(false)">ابدأ اللعب 🚀</button>
+    </div>
+
+    <div id="pass-view" class="card hidden">
+        <p>مرر الجوال إلى:</p>
+        <div id="next-player-name" class="player-name-yellow"></div>
+        <button class="btn-main" onclick="proceedToTurn()">أنا جاهز.. 🔓</button>
+    </div>
+
+    <div id="action-view" class="card hidden">
+        <h3 id="p-name" style="margin:0; color:#94a3b8;"></h3>
+        <div id="p-role" class="player-name-yellow"></div>
+        <div id="wolf-mates-text-area" class="wolf-mate-text hidden"></div>
+        <div id="btns-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;"></div>
+        <div id="wizard-btns" class="hidden" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;"></div>
+    </div>
+
+    <div id="morning-view" class="card hidden">
+        <h2 id="morning-title">☀️ الصباح</h2>
+        <div id="morning-msg" style="margin-bottom: 20px;"></div>
+        <div id="vote-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%;"></div>
+        <div id="morning-actions" class="hidden" style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-main" onclick="startIndividualVote()">تصويت فردي 🗳️</button>
+            <button class="btn-opt" onclick="ask('تخطي جماعي لليل التالي؟', startNight)">تخطي جماعي ⏭️</button>
+        </div>
+        <button id="next-btn" class="btn-main hidden" onclick="startNight()">الليل التالي 🌙</button>
+        <div id="end-screen" class="hidden">
+            <div id="roles-summary"></div>
+            <button class="btn-main" onclick="initGame(true)">🔄 إعادة (نفس الترتيب)</button>
+            <button class="btn-opt" style="width:100%; margin-top:10px;" onclick="rotateAndStart()">🔀 إعادة (تغيير البادئ)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let players = [];
+    let state = { mode: 'night', cur: 0, deads: [], saves: [], poisons: [], elixir: false, votes: {}, comedy: true };
+
+    // روابط الأصوات
+    const Sfx = {
+        kill: 'https://files.catbox.moe/p9pkhm.mp3', // صوت Kill Among Us
+        peace: 'https://www.soundjay.com/nature/sounds/birds-chirping-01.mp3' // صوت عصافير
+    };
+
+    function playSfx(url) {
+        let audio = new Audio(url);
+        audio.play().catch(e => console.log("الصوت يتطلب تفاعل المستخدم أولاً"));
+    }
+
+    function ask(txt, onOk, onNo = null) {
+        document.getElementById('modal-msg').innerHTML = txt;
+        document.getElementById('custom-modal').classList.remove('hidden');
+        document.getElementById('btn-ok').onclick = () => { document.getElementById('custom-modal').classList.add('hidden'); if(onOk) onOk(); };
+        document.getElementById('btn-no').onclick = () => { document.getElementById('custom-modal').classList.add('hidden'); if(onNo) onNo(); };
+    }
+
+    function hardReset() { hideAll(); players = []; resetData(); document.getElementById('setup-view').classList.remove('hidden'); }
+
+    function resetData() {
+        state = { mode: 'night', cur: 0, deads: [], saves: [], poisons: [], elixir: false, votes: {}, comedy: document.getElementById('comedy-mode').checked };
+        document.getElementById('morning-msg').innerHTML = "";
+        document.getElementById('vote-grid').innerHTML = "";
+        document.getElementById('morning-actions').classList.add('hidden');
+        document.getElementById('end-screen').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('wolf-mates-text-area').classList.add('hidden');
+    }
+
+    function initGame(keepOrder) {
+        let names = keepOrder ? players.map(p => p.name) : document.getElementById('names-input').value.split('\n').filter(x => x.trim());
+        resetData();
+        let count = names.length;
+        let wolfCount = 1;
+        if (count >= 6 && count <= 7) wolfCount = 2;
+        else if (count >= 8 && count <= 9) wolfCount = 3;
+        else if (count >= 10) wolfCount = 4;
+
+        let roles = [];
+        for (let i = 0; i < wolfCount; i++) roles.push('مستذئب');
+        const specials = ['طبيب', 'عراف', 'ساحر'];
+        while (roles.length < count) roles.push(specials[Math.floor(Math.random() * specials.length)]);
+        roles.sort(() => Math.random() - 0.5);
+        players = names.map((name, i) => ({ name, role: roles[i], alive: true, poison: roles[i]==='ساحر', elixir: roles[i]==='ساحر', lastS: '' }));
+        startNight();
+    }
+
+    function rotateAndStart() {
+        let names = players.map(p => p.name); names.push(names.shift());
+        players = names.map(n => ({name: n})); 
+        initGame(true);
+    }
+
+    function startNight() {
+        state.mode = 'night'; state.cur = 0; state.deads = []; state.saves = []; state.poisons = []; state.elixir = false;
+        preparePass();
+    }
+
+    function startIndividualVote() {
+        state.mode = 'vote'; state.cur = 0; state.votes = {};
+        preparePass();
+    }
+
+    function preparePass() {
+        const active = players.filter(p => p.alive);
+        if(state.cur >= active.length) return state.mode === 'night' ? revealMorning() : tallyVotes();
+        hideAll();
+        document.getElementById('next-player-name').innerText = active[state.cur].name;
+        document.getElementById('pass-view').classList.remove('hidden');
+    }
+
+    function proceedToTurn() { state.mode === 'night' ? showNightAction() : showVoteAction(); }
+
+    function showNightAction() {
+        hideAll();
+        const active = players.filter(p => p.alive);
+        const p = active[state.cur];
+        document.getElementById('action-view').classList.remove('hidden');
+        document.getElementById('p-name').innerText = p.name;
+        document.getElementById('p-role').innerText = p.role + (p.role==='مستذئب'?' 🔪':'');
+        const container = document.getElementById('btns-container');
+        const wizBox = document.getElementById('wizard-btns');
+        const mateArea = document.getElementById('wolf-mates-text-area');
+        container.innerHTML = ""; wizBox.innerHTML = ""; wizBox.classList.add('hidden'); mateArea.classList.add('hidden');
+
+        if(p.role === 'مستذئب') {
+            const mates = players.filter(x => x.role === 'مستذئب' && x.name !== p.name && x.alive);
+            if(mates.length > 0) {
+                mateArea.innerText = "زملاؤك هم: " + mates.map(m => m.name).join(' و ');
+                mateArea.classList.remove('hidden');
+            }
+            renderTargets(container, (t) => { state.deads.push(t); finish(); }, "", true);
+        } else if(p.role === 'طبيب') {
+            renderTargets(container, (t) => { state.saves.push(t); p.lastS = t; finish(); }, p.lastS);
+        } else if(p.role === 'عراف') {
+            renderTargets(container, (t) => {
+                const target = players.find(x => x.name === t);
+                const isW = target.role === 'مستذئب';
+                let color = isW ? '#ef4444' : '#f59e0b';
+                let msg = `كشفت ${t} وطلع: <br><span style="color:${color}; font-weight:bold; font-size:1.3rem;">${target.role}</span>`;
+                if(state.comedy && t === "فاتح") msg = (isW ? "كشفت عمك فاتح.. طلع ذيب! 🔪" : "هذا فاتح عمك.. قروي نظيف! 🛡️") + `<br><br><span style="color:${color}; font-weight:bold; font-size:1.3rem;">${target.role}</span>`;
+                ask(msg, finish);
+            }, p.name);
+        } else if(p.role === 'ساحر') {
+            wizBox.classList.remove('hidden');
+            if(p.elixir) {
+                const b = document.createElement('button'); b.className="btn-main"; b.innerText="إكسير ✨ (حماية الكل)";
+                b.onclick = () => ask("حماية الجميع بالإكسير؟", () => { state.elixir = true; p.elixir = false; finish(); });
+                wizBox.appendChild(b);
+            }
+            if(p.poison) {
+                const b = document.createElement('button'); b.className="btn-main"; b.style.background="#ef4444"; b.innerText="سم 🧪 (قتل شخص)";
+                b.onclick = () => { wizBox.classList.add('hidden'); renderPoisonTargets(); };
+                wizBox.appendChild(b);
+            }
+            const skip = document.createElement('button'); skip.className="btn-opt"; skip.innerText="تخطي الدور"; skip.onclick = finish; wizBox.appendChild(skip);
+        }
+    }
+
+    function renderPoisonTargets() {
+        const c = document.getElementById('btns-container'); c.innerHTML = "";
+        players.filter(p => p.alive).forEach(p => {
+            const b = document.createElement('button'); b.className = "btn-opt"; b.innerText = p.name;
+            b.onclick = () => {
+                let msg = `تسميم ${p.name}؟`;
+                if(state.comedy && p.name === "فاتح") msg = "سممت عمك ياحيوان 💔، مالك داعي";
+                ask(msg, () => { state.poisons.push(p.name); players.find(w => w.name === document.getElementById('p-name').innerText).poison = false; finish(); });
+            };
+            c.appendChild(b);
+        });
+        const undo = document.createElement('button'); undo.className="btn-main"; undo.style.background="#f59e0b"; undo.style.gridColumn="span 2"; undo.innerText="تراجع ↩️";
+        undo.onclick = () => showNightAction(); c.appendChild(undo);
+    }
+
+    function renderTargets(c, action, skipN = "", isW = false) {
+        players.filter(p => p.alive).forEach(p => {
+            const b = document.createElement('button'); b.className = "btn-opt";
+            let label = p.name;
+            if(isW) {
+                if(state.deads.includes(p.name)) label += " 💀"; 
+                if(p.role === 'مستذئب' && p.name !== players.filter(pl=>pl.alive)[state.cur].name) { b.classList.add('wolf-target'); label += ' 🔪'; }
+            }
+            b.innerText = label;
+            if(p.name === skipN) b.style.opacity = "0.3"; 
+            else b.onclick = () => {
+                let msg = `تختار ${p.name}؟`;
+                if(state.comedy && p.name === "فاتح") {
+                    if(isW) msg = "الذيب غدر بعمه فاتح.. قوية! 🔪💔";
+                    if(players.filter(pl=>pl.alive)[state.cur].role === "طبيب") msg = "حميت عمك فاتح.. القرية تحبك! 🛡️";
+                }
+                ask(msg, () => action(p.name));
+            };
+            c.appendChild(b);
+        });
+    }
+
+    function finish() { state.cur++; setTimeout(preparePass, 100); }
+
+    function revealMorning() {
+        let killed = [...new Set([...(state.elixir ? [] : state.deads.filter(d => !state.saves.includes(d))), ...state.poisons])];
+        
+        // --- إضافة منطق الأصوات هنا ---
+        if (killed.length > 0) {
+            playSfx(Sfx.kill); // صوت سكين أمونق أس
+        } else {
+            playSfx(Sfx.peace); // صوت عصافير
+        }
+        // --------------------------
+
+        players.forEach(p => { if(killed.includes(p.name)) p.alive = false; });
+        hideAll();
+        document.getElementById('morning-view').classList.remove('hidden');
+        document.getElementById('morning-actions').classList.remove('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('morning-title').innerText = "☀️ الصباح";
+        let msg = killed.length === 0 ? "صباح هادئ.. الكل حي! 🎉" : "";
+        killed.forEach(n => msg += `<div style="color:red; margin-bottom:10px; font-weight:bold;">${state.comedy && n === "فاتح" ? "فقدتوا عمكم فاتح 💔" : "مات المسكين: " + n} 💀</div>`);
+        document.getElementById('morning-msg').innerHTML = msg;
+        checkEnd();
+    }
+
+    function showVoteAction() {
+        hideAll(); document.getElementById('morning-view').classList.remove('hidden');
+        document.getElementById('morning-actions').classList.add('hidden');
+        const active = players.filter(p => p.alive);
+        document.getElementById('morning-title').innerText = `تصويت: ${active[state.cur].name}`;
+        const grid = document.getElementById('vote-grid'); grid.innerHTML = "";
+        active.filter(p => p.name !== active[state.cur].name).forEach(p => {
+            const b = document.createElement('div'); b.className="vote-circle"; b.innerText=p.name;
+            b.onclick = () => ask(`تصوت ضد ${p.name}؟`, () => { state.votes[p.name] = (state.votes[p.name]||0)+1; finish(); });
+            grid.appendChild(b);
+        });
+        const skip = document.createElement('button'); skip.className="btn-opt"; skip.style.gridColumn="span 3"; skip.innerText="تخطي التصويت"; skip.onclick = finish;
+        grid.appendChild(skip);
+    }
+
+    function tallyVotes() {
+        hideAll(); document.getElementById('morning-view').classList.remove('hidden');
+        document.getElementById('morning-title').innerText = "النتيجة النهائية";
+        let max = 0, victim = null, tie = false;
+        for(let n in state.votes) { if(state.votes[n] > max) { max = state.votes[n]; victim = n; tie = false; } else if(state.votes[n]===max) tie = true; }
+        let res = "تعادل.. لم يطرد أحد!";
+        if(victim && !tie) {
+            res = (state.comedy && victim === "فاتح") ? "يا خسارة.. طردتوا عمكم فاتح! 🚪🚫 💀" : `القرية قررت طرد <b style="color:red;">${victim}</b>! 💀`;
+            players.find(p=>p.name===victim).alive = false;
+        }
+        document.getElementById('morning-msg').innerHTML = res;
+        document.getElementById('next-btn').classList.remove('hidden');
+        checkEnd();
+    }
+
+    function checkEnd() {
+        const w = players.filter(p=>p.alive && p.role==='مستذئب').length;
+        const o = players.filter(p=>p.alive && p.role!=='مستذئب').length;
+        if(w === 0 || w >= o) finalize(w === 0 ? "🎉 فاز القرويون!" : "🔪 فاز المستذئبون!");
+    }
+
+    function finalize(m) {
+        document.getElementById('morning-title').innerText = m;
+        document.getElementById('morning-actions').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        const wolves = players.filter(p => p.role === 'مستذئب');
+        const villagers = players.filter(p => p.role !== 'مستذئب');
+        document.getElementById('roles-summary').innerHTML = `
+            <div style="background:rgba(255,0,0,0.1); padding:15px; border-radius:15px; margin-bottom:15px; text-align:right;">
+                <b style="color:#ff4d4d">المستذئبين:</b> ${wolves.map(p => p.name + (p.alive?'':' (مات)')).join('، ')}
+            </div>
+            <div style="background:rgba(0,255,0,0.1); padding:15px; border-radius:15px; text-align:right;">
+                <b style="color:#4ade80">القرويين:</b> ${villagers.map(p => p.name + ` (${p.role})` + (p.alive?'':' (مات)')).join('، ')}
+            </div>`;
+    }
+
+    function hideAll() { document.querySelectorAll('.card').forEach(c => c.classList.add('hidden')); }
+</script>
